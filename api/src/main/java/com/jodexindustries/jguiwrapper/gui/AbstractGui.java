@@ -3,10 +3,15 @@ package com.jodexindustries.jguiwrapper.gui;
 import com.jodexindustries.jguiwrapper.api.GuiApi;
 import com.jodexindustries.jguiwrapper.api.gui.Gui;
 import com.jodexindustries.jguiwrapper.api.gui.GuiHolder;
+import com.jodexindustries.jguiwrapper.api.item.DataModel;
 import com.jodexindustries.jguiwrapper.api.nms.NMSWrapper;
+import com.jodexindustries.jguiwrapper.api.item.DataHandler;
+import com.jodexindustries.jguiwrapper.api.item.ItemHandlerRegistry;
+import com.jodexindustries.jguiwrapper.api.gui.MetaGuiItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +31,7 @@ public abstract class AbstractGui implements Gui {
     private InventoryType type;
 
     private GuiHolder holder;
+    private final List<MetaGuiItem> metaItems = new ArrayList<>();
 
     public AbstractGui(@NotNull String title) {
         this(54, title);
@@ -170,6 +176,48 @@ public abstract class AbstractGui implements Gui {
         this.holder = new GuiHolder(this, type);
 
         viewers.forEach(this::open);
+    }
+
+    /**
+     * Добавить предмет в GUI по namespace:id, DataModel и слоту.
+     */
+    public void addMetaItem(@NotNull String namespacedId, @NotNull DataModel dataModel, int slot) {
+        metaItems.add(new MetaGuiItem(namespacedId, dataModel, slot));
+        renderMetaItem(namespacedId, dataModel, slot);
+    }
+
+    /**
+     * Обновить предмет в GUI по namespace:id, DataModel и слоту.
+     */
+    public void updateMetaItem(@NotNull String namespacedId, @NotNull DataModel dataModel, int slot) {
+        metaItems.removeIf(item -> item.getSlot() == slot);
+        addMetaItem(namespacedId, dataModel, slot);
+    }
+
+    /**
+     * Перерисовать все metaItems (например, после смены языка или данных).
+     */
+    public void rerenderMetaItems(@NotNull Player player) {
+        for (MetaGuiItem item : metaItems) {
+            renderMetaItem(item.getNamespacedId(), item.getDataModel(), item.getSlot(), player);
+        }
+    }
+
+    /**
+     * Внутренний рендер предмета через DataHandler.
+     */
+    private void renderMetaItem(@NotNull String namespacedId, @NotNull DataModel dataModel, int slot) {
+        for (HumanEntity viewer : holder.getInventory().getViewers()) {
+            if (viewer instanceof Player player) {
+                renderMetaItem(namespacedId, dataModel, slot, player);
+            }
+        }
+    }
+    private void renderMetaItem(@NotNull String namespacedId, @NotNull DataModel dataModel, int slot, @NotNull Player player) {
+        DataHandler handler = ItemHandlerRegistry.get(namespacedId);
+        if (handler != null) {
+            holder.getInventory().setItem(slot, handler.render(dataModel, player).itemStack());
+        }
     }
 
     protected static int adaptSize(int size) {

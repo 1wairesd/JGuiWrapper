@@ -1,9 +1,14 @@
 package com.jodexindustries.jguiwrapper.plugin;
 
+import com.jodexindustries.jguiwrapper.api.item.DataHandler;
+import com.jodexindustries.jguiwrapper.api.item.DataModel;
+import com.jodexindustries.jguiwrapper.api.item.ItemHandlerRegistry;
+import com.jodexindustries.jguiwrapper.api.i18n.TranslationRegistry;
 import com.jodexindustries.jguiwrapper.api.item.ItemWrapper;
 import com.jodexindustries.jguiwrapper.gui.advanced.AdvancedGui;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 
 import java.util.stream.IntStream;
 
@@ -13,6 +18,29 @@ public class TestAdvancedGui extends AdvancedGui {
 
     public TestAdvancedGui() {
         super("&cAdvanced gui");
+
+        // Регистрация перевода
+        TranslationRegistry.register("test.button", "en", "Click me!");
+        TranslationRegistry.register("test.button", "ru", "Нажми меня!");
+
+        // Регистрация обработчика
+        ItemHandlerRegistry.register("test:button", new DataHandler<TestButtonModel>() {
+            @Override
+            public ItemWrapper render(TestButtonModel model, Player player) {
+                String label = TranslationRegistry.get("test.button", player.locale());
+                return ItemWrapper.builder(Material.GOLD_BLOCK)
+                        .displayName(Component.text(label + " (" + model.getClicks() + ")"))
+                        .build();
+            }
+            @Override
+            public void onClick(TestButtonModel model, Player player) {
+                model.increment();
+                player.sendMessage("Clicked! " + model.getClicks());
+            }
+        });
+
+        // Добавление предмета через metaItem
+        addMetaItem("test:button", new TestButtonModel(), 0);
 
         onClose(event -> {
             event.getPlayer().sendMessage("Closed");
@@ -51,4 +79,11 @@ public class TestAdvancedGui extends AdvancedGui {
         });
 
     }
+
+    // Пример DataModel
+    public static class TestButtonModel implements DataModel {
+        private int clicks = 0;
+        public int getClicks() { return clicks; }
+        public void increment() { clicks++; }
     }
+}

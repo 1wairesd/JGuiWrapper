@@ -127,8 +127,7 @@ public class ItemWrapper {
         return canUpdate;
     }
 
-    public static Builder builder(@NotNull Material material) {
-        Preconditions.checkArgument(material != null, "Material cannot be null");
+    public static Builder builder(Material material) {
         return new Builder(material);
     }
 
@@ -137,53 +136,30 @@ public class ItemWrapper {
     }
 
     public static class Builder {
-        private final Material material;
-        private int amount = 1;
-        private Component displayName;
-        private List<Component> lore;
-        private Integer customModelData;
-        private boolean autoFlushUpdate;
+        private final ItemWrapper itemWrapper;
 
-        private Builder(@NotNull Material material) {
-            this.material = material;
+        public Builder(Material material) {
+            this.itemWrapper = new ItemWrapper(material);
         }
 
-        public Builder amount(int amount) {
-            this.amount = amount;
+        public Builder displayName(Component displayName) {
+            itemWrapper.displayName = displayName;
             return this;
         }
 
-        public Builder displayName(@Nullable Component displayName) {
-            this.displayName = displayName;
+        public Builder lore(List<Component> lore) {
+            itemWrapper.lore = lore;
             return this;
         }
 
-        public Builder lore(@Nullable List<Component> lore) {
-            this.lore = lore;
-            return this;
-        }
-
-        public Builder customModelData(@Nullable Integer customModelData) {
-            this.customModelData = customModelData;
-            return this;
-        }
-
-        public Builder autoFlushUpdate(boolean autoFlushUpdate) {
-            this.autoFlushUpdate = autoFlushUpdate;
+        public Builder customModelData(Integer data) {
+            itemWrapper.customModelData = data;
             return this;
         }
 
         public ItemWrapper build() {
-            ItemWrapper wrapper = new ItemWrapper(material, amount);
-
-            wrapper.displayName = displayName;
-            wrapper.lore = lore;
-            wrapper.customModelData = customModelData;
-            wrapper.autoFlushUpdate = autoFlushUpdate;
-
-            wrapper.update();
-
-            return wrapper;
+            itemWrapper.flushUpdate();
+            return itemWrapper;
         }
     }
 
