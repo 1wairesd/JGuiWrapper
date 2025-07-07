@@ -9,6 +9,7 @@ import com.jodexindustries.jguiwrapper.gui.advanced.AdvancedGui;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import com.jodexindustries.jguiwrapper.api.item.DataModelRegistry;
 
 import java.util.stream.IntStream;
 
@@ -36,11 +37,15 @@ public class TestAdvancedGui extends AdvancedGui {
             public void onClick(TestButtonModel model, Player player) {
                 model.increment();
                 player.sendMessage("Clicked! " + model.getClicks());
+                rerenderMetaItems(player);
             }
         });
 
-        // Добавление предмета через metaItem
-        addMetaItem("test:button", new TestButtonModel(), 0);
+        // Регистрируем DataModel заранее
+        DataModelRegistry.register("test:button", new TestButtonModel());
+
+        // Используем модель из реестра при создании меню
+        addMetaItem("test:button", (TestButtonModel) DataModelRegistry.get("test:button"), 0);
 
         onClose(event -> {
             event.getPlayer().sendMessage("Closed");
